@@ -161,7 +161,7 @@ func (r *RTPReceiver) startReceive(parameters RTPReceiveParameters) error {
 
 	for i := range parameters.Encodings {
 		if parameters.Encodings[i].RID != "" {
-			// RID based tracks will be set up in receiveForRid
+			// RID based tracks will be set up in ReceiveForRid
 			continue
 		}
 
@@ -336,6 +336,17 @@ func (r *RTPReceiver) readRTP(b []byte, reader *TrackRemote) (n int, a intercept
 	}
 
 	return 0, nil, fmt.Errorf("%w: %d", errRTPReceiverWithSSRCTrackStreamNotFound, reader.SSRC())
+}
+
+func (r *RTPReceiver) ReceiveForRid(ssrc SSRC, rid string, params RTPParameters, parameters RTPReceiveParameters, streamInfo *interceptor.StreamInfo) (*TrackRemote, error) {
+	readStream, interceptor, rtcpReadStream, rtcpInterceptor, err := r.transport.streamsForSSRC(ssrc, *streamInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	r.configureReceive(parameters)
+
+	return r.receiveForRid(rid, params, streamInfo, readStream, interceptor, rtcpReadStream, rtcpInterceptor)
 }
 
 // receiveForRid is the sibling of Receive expect for RIDs instead of SSRCs
